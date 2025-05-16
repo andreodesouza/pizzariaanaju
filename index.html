@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizzaria AnaJu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Cardápio</h2>
+  <div id="menu" class="menu-grid"></div>
+
+  <h2>Carrinho</h2>
+  <div id="carrinho"></div>
+  <button onclick="finalizarPedido()">Finalizar no WhatsApp</button>
+
+  <script>
+    const webAppUrl = 'https://script.google.com/macros/s/AKfycbzICV0WuuCxOG4vnTrCzQY-LR9waA5QwiHYigdAz2Ry_3jCrpMuIPQE-r62zomqWxq34g/exec';
+    
+    let carrinho = [];
+
+    async function carregarCardapio() {
+      const response = await fetch(webAppUrl);
+      const menuItems = await response.json();
+      const menuDiv = document.getElementById('menu');
+
+      menuItems.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('item-card');
+
+        itemDiv.innerHTML = `
+          <img src="${item.imagem}" alt="${item.nome}" class="item-img">
+          <p><strong>${item.nome}</strong> - R$${item.preco.toFixed(2)}</p>
+          <p>${item.descricao}</p>
+          <input type="number" id="qtd-${item.codigo}" min="1" value="1">
+          <button onclick="adicionarAoCarrinho(${item.codigo}, '${item.nome}', ${item.preco})">Adicionar</button>
+        `;
+        menuDiv.appendChild(itemDiv);
+      });
+    }
+
+    function adicionarAoCarrinho(codigo, nome, preco) {
+      const input = document.getElementById(`qtd-${codigo}`);
+      const quantidade = parseInt(input.value) || 1;
+
+      const itemExistente = carrinho.find(item => item.codigo === codigo);
+
+      if (itemExistente) {
+        itemExistente.quantidade += quantidade;
+        itemExistente.total = itemExistente.quantidade * itemExistente.preco;
+      } else {
+        carrinho.push({ codigo, nome, quantidade, preco, total: preco * quantidade });
+      }
+      atualizarCarrinho();
+    }
+
+    function atualizarCarrinho() {
+      const carrinhoDiv = document.getElementById('carrinho');
+      carrinhoDiv.innerHTML = '';
+      let totalGeral = 0;
+
+      carrinho.forEach((item, index) => {
+        totalGeral += item.total;
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('carrinho-item');
+        itemDiv.innerHTML = `
+          ${item.nome} - Quantidade: ${item.quantidade} - Total: R$${item.total.toFixed(2)}
+          <button onclick="removerItem(${index})">Remover</button>
+        `;
+        carrinhoDiv.appendChild(itemDiv);
+      });
+
+      if (carrinho.length > 0) {
+        const totalDiv = document.createElement('div');
+        totalDiv.classList.add('total');
+        totalDiv.innerHTML = `Total Geral: R$${totalGeral.toFixed(2)}`;
+        carrinhoDiv.appendChild(totalDiv);
+      }
+    }
+
+    function removerItem(index) {
+      carrinho.splice(index, 1);
+      atualizarCarrinho();
+    }
+
+    function finalizarPedido() {
+      if (carrinho.length === 0) {
+        alert("Adicione itens ao carrinho antes de finalizar o pedido.");
+        return;
+      }
+
+      let mensagem = 'Pedido:\n';
+      let totalGeral = 0;
+
+      carrinho.forEach(item => {
+        mensagem += `\n- ${item.nome} (Qtd: ${item.quantidade}) - R$ ${item.total.toFixed(2)}`;
+        totalGeral += item.total;
+      });
+
+      mensagem += `\n\nTotal: R$ ${totalGeral.toFixed(2)}`;
+      const numeroWhatsApp = '22974044370';
+      const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
+
+      window.location.href = urlWhatsApp;
+    }
+
+    window.onload = carregarCardapio;
+  </script>
+</body>
+</html>
