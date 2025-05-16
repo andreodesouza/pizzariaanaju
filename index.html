@@ -12,11 +12,22 @@
 
   <h2>Carrinho</h2>
   <div id="carrinho"></div>
+
+  <div id="pagamento">
+    <label for="formaPagamento"><strong>Forma de Pagamento:</strong></label>
+    <select id="formaPagamento">
+      <option value="Dinheiro">Dinheiro</option>
+      <option value="Pix">Pix</option>
+      <option value="Cartão na Entrega">Cartão na Entrega</option>
+      <option value="Cartão Online">Cartão Online</option>
+    </select>
+  </div>
+
   <button onclick="finalizarPedido()">Finalizar no WhatsApp</button>
 
   <script>
-    const webAppUrl = 'https://script.google.com/macros/s/AKfycbzICV0WuuCxOG4vnTrCzQY-LR9waA5QwiHYigdAz2Ry_3jCrpMuIPQE-r62zomqWxq34g/exec';
-    
+    const webAppUrl = 'https://script.google.com/macros/s/AKfycbzfJiL_pKPj3VIMqKBl-4B0jgwYJQalUICj9zaWtwYp6oDAgKW-w5xBthxSMG9Zq8gW/exec';
+
     let carrinho = [];
 
     async function carregarCardapio() {
@@ -32,16 +43,28 @@
           <img src="${item.imagem}" alt="${item.nome}" class="item-img">
           <p><strong>${item.nome}</strong> - R$${item.preco.toFixed(2)}</p>
           <p>${item.descricao}</p>
-          <input type="number" id="qtd-${item.codigo}" min="1" value="1">
+          <div class="quantidade-controls">
+            <button onclick="alterarQuantidade(${item.codigo}, -1)">-</button>
+            <span id="qtd-${item.codigo}">1</span>
+            <button onclick="alterarQuantidade(${item.codigo}, 1)">+</button>
+          </div>
           <button onclick="adicionarAoCarrinho(${item.codigo}, '${item.nome}', ${item.preco})">Adicionar</button>
         `;
         menuDiv.appendChild(itemDiv);
       });
     }
 
+    function alterarQuantidade(codigo, delta) {
+      const span = document.getElementById(`qtd-${codigo}`);
+      let quantidadeAtual = parseInt(span.textContent);
+      quantidadeAtual += delta;
+      if (quantidadeAtual < 1) quantidadeAtual = 1;
+      span.textContent = quantidadeAtual;
+    }
+
     function adicionarAoCarrinho(codigo, nome, preco) {
-      const input = document.getElementById(`qtd-${codigo}`);
-      const quantidade = parseInt(input.value) || 1;
+      const span = document.getElementById(`qtd-${codigo}`);
+      const quantidade = parseInt(span.textContent) || 1;
 
       const itemExistente = carrinho.find(item => item.codigo === codigo);
 
@@ -84,20 +107,25 @@
     }
 
     function finalizarPedido() {
-      if (carrinho.length === 0) {
-        alert("Adicione itens ao carrinho antes de finalizar o pedido.");
-        return;
-      }
+      const formaPagamento = document.getElementById('formaPagamento').value;
 
-      let mensagem = 'Pedido:\n';
+      let mensagem = '📦 Pedido:\n';
       let totalGeral = 0;
 
       carrinho.forEach(item => {
-        mensagem += `\n- ${item.nome} (Qtd: ${item.quantidade}) - R$ ${item.total.toFixed(2)}`;
+        mensagem += `- ${item.nome} (Qtd: ${item.quantidade}) - R$ ${item.total.toFixed(2)}\n`;
         totalGeral += item.total;
       });
 
-      mensagem += `\n\nTotal: R$ ${totalGeral.toFixed(2)}`;
+      mensagem += `\n💰 Total: R$ ${totalGeral.toFixed(2)}`;
+      mensagem += `\n💳 Forma de Pagamento: ${formaPagamento}`;
+
+      if (formaPagamento === "Pix") {
+        mensagem += `\n🔗 Pix: https://seusite.com/pix?valor=${totalGeral.toFixed(2)}`;
+      } else if (formaPagamento === "Cartão Online") {
+        mensagem += `\n🔗 Pagamento Online: https://mpago.la/abc123`; // substitua pelo seu link real
+      }
+
       const numeroWhatsApp = '22974044370';
       const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
 
