@@ -117,4 +117,54 @@ button:hover {
   padding: 4px 8px;
   font-size: 16px;
 }
+#cliente {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 16px;
+  margin-top: 20px;
+  border-radius: 8px;
+  max-width: 500px;
+}
+
+#cliente h2, #cliente h3 {
+  margin-top: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+#cliente label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+  color: #444;
+}
+
+#cliente input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: #fff;
+}
+
+@media (max-width: 600px) {
+  #cliente {
+    padding: 12px;
+    max-width: 100%;
+  }
+}
+/* Efeito de destaque visual no carrinho */
+.destaque {
+  animation: destaqueCarrinho 1s ease-in-out;
+}
+
+@keyframes destaqueCarrinho {
+  0% { background-color: #fffae5; }
+  50% { background-color: #fff3c4; }
+  100% { background-color: transparent; }
+}
 

@@ -13,6 +13,33 @@
   <h2>Carrinho</h2>
   <div id="carrinho"></div>
 
+  <div id="cliente">
+    <h2>Dados do Cliente</h2>
+
+    <label for="nome">Nome:</label>
+    <input type="text" id="nome" required>
+
+    <label for="sobrenome">Sobrenome:</label>
+    <input type="text" id="sobrenome" required>
+
+    <h3>Endereço de Entrega</h3>
+
+    <label for="rua">Rua:</label>
+    <input type="text" id="rua" required>
+
+    <label for="numero">Número:</label>
+    <input type="text" id="numero" required>
+
+    <label for="bairro">Bairro:</label>
+    <input type="text" id="bairro" required>
+
+    <label for="cidade">Cidade:</label>
+    <input type="text" id="cidade" required>
+
+    <label for="complemento">Complemento (opcional):</label>
+    <input type="text" id="complemento">
+  </div>
+
   <div id="pagamento">
     <label for="formaPagamento"><strong>Forma de Pagamento:</strong></label>
     <select id="formaPagamento">
@@ -27,7 +54,6 @@
 
   <script>
     const webAppUrl = 'https://script.google.com/macros/s/AKfycbzfJiL_pKPj3VIMqKBl-4B0jgwYJQalUICj9zaWtwYp6oDAgKW-w5xBthxSMG9Zq8gW/exec';
-
     let carrinho = [];
 
     async function carregarCardapio() {
@@ -63,19 +89,45 @@
     }
 
     function adicionarAoCarrinho(codigo, nome, preco) {
-      const span = document.getElementById(`qtd-${codigo}`);
-      const quantidade = parseInt(span.textContent) || 1;
+  const span = document.getElementById(`qtd-${codigo}`);
+  const quantidade = parseInt(span.textContent) || 1;
 
-      const itemExistente = carrinho.find(item => item.codigo === codigo);
+  const itemExistente = carrinho.find(item => item.codigo === codigo);
 
-      if (itemExistente) {
-        itemExistente.quantidade += quantidade;
-        itemExistente.total = itemExistente.quantidade * itemExistente.preco;
-      } else {
-        carrinho.push({ codigo, nome, quantidade, preco, total: preco * quantidade });
-      }
-      atualizarCarrinho();
+  if (itemExistente) {
+    itemExistente.quantidade += quantidade;
+    itemExistente.total = itemExistente.quantidade * itemExistente.preco;
+  } else {
+    carrinho.push({ codigo, nome, quantidade, preco, total: preco * quantidade });
+  }
+
+  atualizarCarrinho();
+
+  // Scroll para o carrinho com efeito suave
+  document.getElementById('carrinho').scrollIntoView({ behavior: 'smooth' });
+
+  // Destaque visual no carrinho
+  const carrinhoDiv = document.getElementById('carrinho');
+  carrinhoDiv.classList.add('destaque');
+  setTimeout(() => {
+    carrinhoDiv.classList.remove('destaque');
+  }, 1000);
+
+  // Feedback no botão
+  const botoes = document.querySelectorAll(`.item-card button`);
+  botoes.forEach(botao => {
+    if (botao.innerText === "Adicionar") {
+      botao.disabled = true;
+      const textoOriginal = botao.innerText;
+      botao.innerText = "Adicionado!";
+      setTimeout(() => {
+        botao.innerText = textoOriginal;
+        botao.disabled = false;
+      }, 1000);
     }
+  });
+}
+
 
     function atualizarCarrinho() {
       const carrinhoDiv = document.getElementById('carrinho');
@@ -107,9 +159,23 @@
     }
 
     function finalizarPedido() {
+      const nome = document.getElementById('nome').value.trim();
+      const sobrenome = document.getElementById('sobrenome').value.trim();
+      const rua = document.getElementById('rua').value.trim();
+      const numeroEnd = document.getElementById('numero').value.trim();
+      const bairro = document.getElementById('bairro').value.trim();
+      const cidade = document.getElementById('cidade').value.trim();
+      const complemento = document.getElementById('complemento').value.trim();
       const formaPagamento = document.getElementById('formaPagamento').value;
 
-      let mensagem = '📦 Pedido:\n';
+      if (!nome || !sobrenome || !rua || !numeroEnd || !bairro || !cidade) {
+        alert('Por favor, preencha todos os dados do cliente e endereço.');
+        return;
+      }
+
+      const endereco = `${rua}, ${numeroEnd} - ${bairro}, ${cidade}${complemento ? ' - ' + complemento : ''}`;
+
+      let mensagem = `📦 Pedido:\n`;
       let totalGeral = 0;
 
       carrinho.forEach(item => {
@@ -119,11 +185,13 @@
 
       mensagem += `\n💰 Total: R$ ${totalGeral.toFixed(2)}`;
       mensagem += `\n💳 Forma de Pagamento: ${formaPagamento}`;
+      mensagem += `\n\n👤 Cliente: ${nome} ${sobrenome}`;
+      mensagem += `\n📍 Endereço: ${endereco}`;
 
       if (formaPagamento === "Pix") {
         mensagem += `\n🔗 Pix: https://seusite.com/pix?valor=${totalGeral.toFixed(2)}`;
       } else if (formaPagamento === "Cartão Online") {
-        mensagem += `\n🔗 Pagamento Online: https://mpago.la/abc123`; // substitua pelo seu link real
+        mensagem += `\n🔗 Pagamento Online: https://mpago.la/abc123`;
       }
 
       const numeroWhatsApp = '22974044370';
