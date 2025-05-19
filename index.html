@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizzaria AnaJu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Cardápio</h2>
+  <div id="menu" class="menu-grid"></div>
+
+  <h2>Carrinho</h2>
+  <div id="carrinho"></div>
+
+  <div id="cliente">
+    <h2>Dados do Cliente</h2>
+
+    <label for="nome">Nome:</label>
+    <input type="text" id="nome" required>
+
+    <label for="sobrenome">Sobrenome:</label>
+    <input type="text" id="sobrenome" required>
+
+    <h3>Endereço de Entrega</h3>
+
+    <label for="rua">Rua:</label>
+    <input type="text" id="rua" required>
+
+    <label for="numero">Número:</label>
+    <input type="text" id="numero" required>
+
+    <label for="bairro">Bairro:</label>
+    <input type="text" id="bairro" required>
+
+    <label for="cidade">Cidade:</label>
+    <input type="text" id="cidade" required>
+
+    <label for="complemento">Complemento (opcional):</label>
+    <input type="text" id="complemento">
+  </div>
+
+  <div id="pagamento">
+    <label for="formaPagamento"><strong>Forma de Pagamento:</strong></label>
+    <select id="formaPagamento">
+      <option value="Dinheiro">Dinheiro</option>
+      <option value="Pix">Pix</option>
+      <option value="Cartão na Entrega">Cartão na Entrega</option>
+      <option value="Cartão Online">Cartão Online</option>
+    </select>
+  </div>
+
+  <button onclick="finalizarPedido()">Finalizar no WhatsApp</button>
+
+  <script>
+    const webAppUrl = 'https://script.google.com/macros/s/AKfycbzfJiL_pKPj3VIMqKBl-4B0jgwYJQalUICj9zaWtwYp6oDAgKW-w5xBthxSMG9Zq8gW/exec';
+    let carrinho = [];
+
+    async function carregarCardapio() {
+      const response = await fetch(webAppUrl);
+      const menuItems = await response.json();
+      const menuDiv = document.getElementById('menu');
+
+      menuItems.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('item-card');
+
+        itemDiv.innerHTML = `
+          <img src="${item.imagem}" alt="${item.nome}" class="item-img">
+          <p><strong>${item.nome}</strong> - R$${item.preco.toFixed(2)}</p>
+          <p>${item.descricao}</p>
+          <div class="quantidade-controls">
+            <button onclick="alterarQuantidade(${item.codigo}, -1)">-</button>
+            <span id="qtd-${item.codigo}">1</span>
+            <button onclick="alterarQuantidade(${item.codigo}, 1)">+</button>
+          </div>
+          <button onclick="adicionarAoCarrinho(${item.codigo}, '${item.nome}', ${item.preco})">Adicionar</button>
+        `;
+        menuDiv.appendChild(itemDiv);
+      });
+    }
+
+    function alterarQuantidade(codigo, delta) {
+      const span = document.getElementById(`qtd-${codigo}`);
+      let quantidadeAtual = parseInt(span.textContent);
+      quantidadeAtual += delta;
+      if (quantidadeAtual < 1) quantidadeAtual = 1;
+      span.textContent = quantidadeAtual;
+    }
+
+    function adicionarAoCarrinho(codigo, nome, preco) {
+  const span = document.getElementById(`qtd-${codigo}`);
+  const quantidade = parseInt(span.textContent) || 1;
+
+  const itemExistente = carrinho.find(item => item.codigo === codigo);
+
+  if (itemExistente) {
+    itemExistente.quantidade += quantidade;
+    itemExistente.total = itemExistente.quantidade * itemExistente.preco;
+  } else {
+    carrinho.push({ codigo, nome, quantidade, preco, total: preco * quantidade });
+  }
+
+  atualizarCarrinho();
+
+  // Scroll para o carrinho com efeito suave
+  document.getElementById('carrinho').scrollIntoView({ behavior: 'smooth' });
+
+  // Destaque visual no carrinho
+  const carrinhoDiv = document.getElementById('carrinho');
+  carrinhoDiv.classList.add('destaque');
+  setTimeout(() => {
+    carrinhoDiv.classList.remove('destaque');
+  }, 1000);
+
+  // Feedback no botão
+  const botoes = document.querySelectorAll(`.item-card button`);
+  botoes.forEach(botao => {
+    if (botao.innerText === "Adicionar") {
+      botao.disabled = true;
+      const textoOriginal = botao.innerText;
+      botao.innerText = "Adicionado!";
+      setTimeout(() => {
+        botao.innerText = textoOriginal;
+        botao.disabled = false;
+      }, 1000);
+    }
+  });
+}
+
+
+    function atualizarCarrinho() {
+      const carrinhoDiv = document.getElementById('carrinho');
+      carrinhoDiv.innerHTML = '';
+      let totalGeral = 0;
+
+      carrinho.forEach((item, index) => {
+        totalGeral += item.total;
+        const itemDiv = document.createElement('div');
+        itemDiv.classList.add('carrinho-item');
+        itemDiv.innerHTML = `
+          ${item.nome} - Quantidade: ${item.quantidade} - Total: R$${item.total.toFixed(2)}
+          <button onclick="removerItem(${index})">Remover</button>
+        `;
+        carrinhoDiv.appendChild(itemDiv);
+      });
+
+      if (carrinho.length > 0) {
+        const totalDiv = document.createElement('div');
+        totalDiv.classList.add('total');
+        totalDiv.innerHTML = `Total Geral: R$${totalGeral.toFixed(2)}`;
+        carrinhoDiv.appendChild(totalDiv);
+      }
+    }
+
+    function removerItem(index) {
+      carrinho.splice(index, 1);
+      atualizarCarrinho();
+    }
+
+    function finalizarPedido() {
+      const nome = document.getElementById('nome').value.trim();
+      const sobrenome = document.getElementById('sobrenome').value.trim();
+      const rua = document.getElementById('rua').value.trim();
+      const numeroEnd = document.getElementById('numero').value.trim();
+      const bairro = document.getElementById('bairro').value.trim();
+      const cidade = document.getElementById('cidade').value.trim();
+      const complemento = document.getElementById('complemento').value.trim();
+      const formaPagamento = document.getElementById('formaPagamento').value;
+
+      if (!nome || !sobrenome || !rua || !numeroEnd || !bairro || !cidade) {
+        alert('Por favor, preencha todos os dados do cliente e endereço.');
+        return;
+      }
+
+      const endereco = `${rua}, ${numeroEnd} - ${bairro}, ${cidade}${complemento ? ' - ' + complemento : ''}`;
+
+      let mensagem = `📦 Pedido:\n`;
+      let totalGeral = 0;
+
+      carrinho.forEach(item => {
+        mensagem += `- ${item.nome} (Qtd: ${item.quantidade}) - R$ ${item.total.toFixed(2)}\n`;
+        totalGeral += item.total;
+      });
+
+      mensagem += `\n💰 Total: R$ ${totalGeral.toFixed(2)}`;
+      mensagem += `\n💳 Forma de Pagamento: ${formaPagamento}`;
+      mensagem += `\n\n👤 Cliente: ${nome} ${sobrenome}`;
+      mensagem += `\n📍 Endereço: ${endereco}`;
+
+      if (formaPagamento === "Pix") {
+        mensagem += `\n🔗 Pix: https://seusite.com/pix?valor=${totalGeral.toFixed(2)}`;
+      } else if (formaPagamento === "Cartão Online") {
+        mensagem += `\n🔗 Pagamento Online: https://mpago.la/abc123`;
+      }
+
+      const numeroWhatsApp = '22974044370';
+      const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
+
+      window.location.href = urlWhatsApp;
+    }
+
+    window.onload = carregarCardapio;
+  </script>
+</body>
+</html>
